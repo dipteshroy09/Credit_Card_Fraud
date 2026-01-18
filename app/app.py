@@ -62,7 +62,14 @@ mode = st.radio("Choose input method", options=["Upload CSV", "Use bundled datas
 
 
 def bundled_data_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "data" / "creditcard.csv"
+    """Returns path to sample data file, or full dataset if available."""
+    root = Path(__file__).resolve().parents[1] / "data"
+    # Prefer sample file if available (for deployment)
+    sample_path = root / "creditcard_sample.csv"
+    if sample_path.exists():
+        return sample_path
+    # Fallback to full dataset
+    return root / "creditcard.csv"
 
 
 @st.cache_data

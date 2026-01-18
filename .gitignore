@@ -12,6 +12,7 @@ __pycache__/
 
 # Data files (large)
 data/*.csv
+!data/creditcard_sample.csv
 data/*.zip
 
 # Model files (large)
