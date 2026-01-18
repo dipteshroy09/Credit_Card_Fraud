@@ -2,6 +2,50 @@
 
 A machine learning application for detecting credit card fraud using logistic regression with Streamlit interface.
 
+## About
+
+Credit Card Fraud Detection is an end-to-end machine learning solution designed to identify fraudulent credit card transactions in real-time. This project addresses the critical challenge of fraud detection in financial transactions, where the cost of false negatives (missing fraud) can be significant, while false positives (flagging legitimate transactions) can impact customer experience.
+
+### Problem Statement
+
+Credit card fraud is a growing concern in the digital payment ecosystem. Traditional rule-based systems often fail to detect sophisticated fraud patterns, leading to financial losses. This project implements a machine learning approach that can:
+
+- **Automatically detect patterns** in transaction data that indicate fraudulent activity
+- **Adapt to new fraud schemes** through data-driven learning
+- **Provide real-time predictions** with interpretable probability scores
+- **Handle class imbalance** between legitimate and fraudulent transactions
+
+### Solution Approach
+
+The application uses a **Logistic Regression** model trained on anonymized credit card transaction data. Key features of the solution:
+
+- **Feature Engineering**: Utilizes PCA-transformed features (V1-V28), transaction time, and amount
+- **Class Imbalance Handling**: Employs balanced class weights to address the highly imbalanced dataset
+- **Threshold Optimization**: Dynamically selects the optimal decision threshold based on F1-score to balance precision and recall
+- **Interactive Interface**: Provides a user-friendly Streamlit web interface for predictions and model interpretation
+
+### Model Performance
+
+The trained model achieves:
+- **PR-AUC**: 0.767 (Precision-Recall Area Under Curve)
+- **Recall**: 0.541 (ability to detect fraud)
+- **F1-Score**: 0.690 (balanced precision-recall metric)
+- **ROC-AUC**: 0.965 (overall discrimination ability)
+
+### Use Cases
+
+- **Financial Institutions**: Integrate into transaction processing pipelines
+- **E-commerce Platforms**: Screen transactions in real-time
+- **Payment Processors**: Enhance fraud detection capabilities
+- **Research & Education**: Learn about fraud detection and imbalanced classification
+
+### Technology Stack
+
+- **Machine Learning**: scikit-learn, pandas, numpy
+- **Web Framework**: Streamlit
+- **Model Serialization**: joblib
+- **Data Processing**: pandas, numpy
+
 ## Features
 
 - **Fraud Detection Model**: Trained logistic regression model with balanced class weights
@@ -130,11 +174,11 @@ The app will open in your browser at `http://localhost:8501`.
 ## Requirements
 
 See `requirements.txt` for full dependency list. Key packages:
-- streamlit >= 1.42.0
-- scikit-learn >= 1.8.0
-- pandas >= 2.3.3
-- numpy >= 2.4.0
-- joblib >= 1.5.3
+- streamlit == 1.42.0
+- scikit-learn == 1.6.1
+- pandas == 2.3.3
+- numpy == 2.4.0
+- joblib == 1.5.3
 - pillow >= 11.0.0, < 12
 
 ## License
