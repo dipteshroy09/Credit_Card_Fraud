@@ -26,7 +26,25 @@ def default_metadata_path() -> Path:
 
 def load_model(model_path: str | Path | None = None) -> Any:
     path = Path(model_path) if model_path is not None else default_model_path()
-    return joblib.load(path)
+    try:
+        return joblib.load(path)
+    except FileNotFoundError:
+        raise
+    except Exception as e:
+        if isinstance(e, (AttributeError, ModuleNotFoundError, ImportError, TypeError, ValueError)):
+            try:
+                import sklearn
+
+                skl_version = sklearn.__version__
+            except Exception:
+                skl_version = "unknown"
+
+            raise RuntimeError(
+                "Failed to load the saved model artifact. This is usually caused by a scikit-learn version mismatch "
+                f"between training and inference (installed scikit-learn: {skl_version}). "
+                "Recreate the artifact by running: python src/train.py"
+            ) from e
+        raise
 
 
 def load_metadata(metadata_path: str | Path | None = None) -> dict[str, Any]:

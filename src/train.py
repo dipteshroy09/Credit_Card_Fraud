@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -116,6 +118,13 @@ def train_and_save(data_path: Path, model_path: Path, metadata_path: Path) -> No
     metadata = {
         "feature_columns": FEATURE_COLUMNS,
         "target_column": TARGET_COLUMN,
+        "environment": {
+            "python": platform.python_version(),
+            "scikit_learn": sklearn.__version__,
+            "pandas": pd.__version__,
+            "numpy": np.__version__,
+            "joblib": joblib.__version__,
+        },
         "threshold": float(threshold),
         "threshold_selection": {
             "method": "max_f1_on_validation",

@@ -101,6 +101,41 @@ section[data-testid="stSidebar"] > div {{
   max-width: 1250px;
 }}
 
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--panel-border) !important;
+  background: var(--panel) !important;
+  box-shadow: var(--shadow);
+  padding: 18px 18px;
+}}
+
+div[data-testid="stVerticalBlockBorderWrapper"] > div {{
+  padding: 0 !important;
+}}
+
+div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stMarkdownContainer"] li,
+div[data-testid="stMarkdownContainer"] span,
+div[data-testid="stWidgetLabel"] > div,
+div[data-testid="stWidgetLabel"] span,
+label,
+[data-baseweb="radio"] span,
+[data-baseweb="checkbox"] span,
+div[data-testid="stFileUploader"] span,
+div[data-testid="stFileUploader"] small,
+div[data-testid="stFileUploader"] p {{
+  color: var(--text) !important;
+}}
+
+div[data-testid="stCaptionContainer"],
+.stCaption {{
+  color: var(--muted) !important;
+}}
+
+div[data-testid="stAlert"] p {{
+  color: var(--text) !important;
+}}
+
 .fg-hero {{
   position: relative;
   border-radius: calc(var(--radius) + 6px);
@@ -341,6 +376,9 @@ try:
 except FileNotFoundError:
     st.error("Model not found. Train it first by running: python src/train.py")
     st.stop()
+except RuntimeError as e:
+    st.error(str(e))
+    st.stop()
 
 threshold_default = float(metadata.get("threshold", 0.5))
 theme = st.sidebar.radio("Theme", options=["Dark", "Light"], horizontal=True, help="Toggle a premium fintech theme.")
@@ -378,137 +416,131 @@ top_n = st.sidebar.number_input(
 
 metrics = metadata.get("metrics", {})
 st.markdown("<div style=\"height: 18px\"></div>", unsafe_allow_html=True)
-st.markdown('<div class="fg-card">', unsafe_allow_html=True)
-st.markdown('<div class="fg-card-title">📈 Model health</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="fg-card-sub">Quick checks to build trust: current threshold and offline test metrics.</div>',
-    unsafe_allow_html=True,
-)
-cols = st.columns(4)
-with cols[0]:
-    _metric_card("Threshold", f"{threshold:.2f}", "🎚️")
-with cols[1]:
-    _metric_card("Test PR-AUC", f"{float(metrics.get('test_pr_auc', 0.0)):.4f}", "✅")
-with cols[2]:
-    _metric_card("Test Recall", f"{float(metrics.get('test_recall', 0.0)):.4f}", "🎯")
-with cols[3]:
-    _metric_card("Test F1", f"{float(metrics.get('test_f1', 0.0)):.4f}", "⚖️")
-st.markdown("</div>", unsafe_allow_html=True)
+with st.container(border=True):
+    st.markdown('<div class="fg-card-title">📈 Model health</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="fg-card-sub">Quick checks to build trust: current threshold and offline test metrics.</div>',
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(4)
+    with cols[0]:
+        _metric_card("Threshold", f"{threshold:.2f}", "🎚️")
+    with cols[1]:
+        _metric_card("Test PR-AUC", f"{float(metrics.get('test_pr_auc', 0.0)):.4f}", "✅")
+    with cols[2]:
+        _metric_card("Test Recall", f"{float(metrics.get('test_recall', 0.0)):.4f}", "🎯")
+    with cols[3]:
+        _metric_card("Test F1", f"{float(metrics.get('test_f1', 0.0)):.4f}", "⚖️")
 
 st.markdown("<div style=\"height: 16px\"></div>", unsafe_allow_html=True)
 
 left, right = st.columns([1.05, 1.0], gap="large")
 
 with left:
-    st.markdown('<div class="fg-card">', unsafe_allow_html=True)
-    st.markdown('<div class="fg-card-title">🧾 Input</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="fg-card-sub">Upload a CSV (batch scoring) or pull a row from the bundled dataset sample.</div>',
-        unsafe_allow_html=True,
-    )
-
-    with st.form("fg_input_form", clear_on_submit=False):
-        mode = st.radio(
-            "Input method",
-            options=["Upload CSV", "Use bundled dataset sample"],
-            horizontal=True,
-            help="Upload a CSV to score multiple rows, or pick a single sample row for a quick check.",
+    with st.container(border=True):
+        st.markdown('<div class="fg-card-title">🧾 Input</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="fg-card-sub">Upload a CSV (batch scoring) or pull a row from the bundled dataset sample.</div>',
+            unsafe_allow_html=True,
         )
 
-        df_input: pd.DataFrame | None = None
-        preview_caption = ""
-
-        if mode == "Upload CSV":
-            uploaded = st.file_uploader(
-                "Upload a CSV file",
-                type=["csv"],
-                help="The CSV must include the required feature columns (Time, V1–V28, Amount).",
+        with st.form("fg_input_form", clear_on_submit=False):
+            mode = st.radio(
+                "Input method",
+                options=["Upload CSV", "Use bundled dataset sample"],
+                horizontal=True,
+                help="Upload a CSV to score multiple rows, or pick a single sample row for a quick check.",
             )
-        else:
-            nrows = st.number_input(
-                "Rows to load",
-                min_value=100,
-                max_value=50000,
-                value=5000,
-                step=100,
-                help="Loads only the first N rows from the bundled dataset file.",
-            )
-            sample_df = load_sample(int(nrows))
-            idx = st.number_input(
-                "Row index",
-                min_value=0,
-                max_value=max(len(sample_df) - 1, 0),
-                value=0,
-                step=1,
-                help="Pick a single transaction row to score.",
-            )
-            preview_caption = f"Bundled sample • row {int(idx)}"
 
-        st.markdown("<div style=\"height: 6px\"></div>", unsafe_allow_html=True)
-        cta = st.columns([1, 1])
-        with cta[0]:
-            st.markdown('<div class="fg-cta">', unsafe_allow_html=True)
-            run = st.form_submit_button("🔎 Run risk scoring")
-            st.markdown("</div>", unsafe_allow_html=True)
-        with cta[1]:
-            show_preview = st.checkbox("Show preview", value=True, help="Preview the input rows before scoring.")
+            df_input: pd.DataFrame | None = None
+            preview_caption = ""
 
-    st.markdown("</div>", unsafe_allow_html=True)
+            if mode == "Upload CSV":
+                uploaded = st.file_uploader(
+                    "Upload a CSV file",
+                    type=["csv"],
+                    help="The CSV must include the required feature columns (Time, V1–V28, Amount).",
+                )
+            else:
+                nrows = st.number_input(
+                    "Rows to load",
+                    min_value=100,
+                    max_value=50000,
+                    value=5000,
+                    step=100,
+                    help="Loads only the first N rows from the bundled dataset file.",
+                )
+                sample_df = load_sample(int(nrows))
+                idx = st.number_input(
+                    "Row index",
+                    min_value=0,
+                    max_value=max(len(sample_df) - 1, 0),
+                    value=0,
+                    step=1,
+                    help="Pick a single transaction row to score.",
+                )
+                preview_caption = f"Bundled sample • row {int(idx)}"
+
+            st.markdown("<div style=\"height: 6px\"></div>", unsafe_allow_html=True)
+            cta = st.columns([1, 1])
+            with cta[0]:
+                st.markdown('<div class="fg-cta">', unsafe_allow_html=True)
+                run = st.form_submit_button("🔎 Run risk scoring")
+                st.markdown("</div>", unsafe_allow_html=True)
+            with cta[1]:
+                show_preview = st.checkbox("Show preview", value=True, help="Preview the input rows before scoring.")
 
 with right:
-    st.markdown('<div class="fg-card">', unsafe_allow_html=True)
-    st.markdown('<div class="fg-card-title">🧠 Prediction</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="fg-card-sub">Fraud status with confidence and clear feedback. Use the threshold in the sidebar to tune sensitivity.</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not "run" in locals() or not run:
-        st.info("Set your input options and click **Run risk scoring**.")
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.stop()
-
-    if mode == "Upload CSV":
-        if uploaded is None:
-            st.warning("Upload a CSV to continue.")
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.stop()
-        df_input = pd.read_csv(uploaded)
-        preview_caption = "Uploaded CSV"
-    else:
-        df_input = sample_df.iloc[[int(idx)]]
-
-    missing_cols = [c for c in FEATURE_COLUMNS if c not in df_input.columns]
-    if missing_cols:
-        st.error(f"Missing required columns: {missing_cols}")
-        st.write("Expected columns:")
-        st.write(FEATURE_COLUMNS + ([TARGET_COLUMN] if TARGET_COLUMN in df_input.columns else []))
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.stop()
-
-    with st.spinner("Running risk checks…"):
-        p = st.progress(0)
-        for i in range(1, 6):
-            time.sleep(0.08)
-            p.progress(i * 20)
-        pred_df = predict_dataframe(model, df_input, threshold)
-        summary = summarize_predictions(pred_df)
-        p.empty()
-
-    total = int(summary["total"])
-    predicted_fraud = int(summary["predicted_fraud"])
-    fraud_rate = float(summary["predicted_fraud_rate"]) if total > 0 else 0.0
-
-    if total == 1:
-        proba = float(pred_df.iloc[0]["fraud_probability"])
-        pred = int(pred_df.iloc[0]["fraud_prediction"])
-        is_fraud = pred == 1
-        pill_class = "danger" if is_fraud else "success"
-        pill_text = "Fraud suspected" if is_fraud else "Not fraud"
-        pill_icon = "⚠️" if is_fraud else "✅"
-
+    with st.container(border=True):
+        st.markdown('<div class="fg-card-title">🧠 Prediction</div>', unsafe_allow_html=True)
         st.markdown(
-            f"""
+            '<div class="fg-card-sub">Fraud status with confidence and clear feedback. Use the threshold in the sidebar to tune sensitivity.</div>',
+            unsafe_allow_html=True,
+        )
+
+        if not "run" in locals() or not run:
+            st.info("Set your input options and click **Run risk scoring**.")
+            st.stop()
+
+        if mode == "Upload CSV":
+            if uploaded is None:
+                st.warning("Upload a CSV to continue.")
+                st.stop()
+            df_input = pd.read_csv(uploaded)
+            preview_caption = "Uploaded CSV"
+        else:
+            df_input = sample_df.iloc[[int(idx)]]
+
+        missing_cols = [c for c in FEATURE_COLUMNS if c not in df_input.columns]
+        if missing_cols:
+            st.error(f"Missing required columns: {missing_cols}")
+            st.write("Expected columns:")
+            st.write(FEATURE_COLUMNS + ([TARGET_COLUMN] if TARGET_COLUMN in df_input.columns else []))
+            st.stop()
+
+        with st.spinner("Running risk checks…"):
+            p = st.progress(0)
+            for i in range(1, 6):
+                time.sleep(0.08)
+                p.progress(i * 20)
+            pred_df = predict_dataframe(model, df_input, threshold)
+            summary = summarize_predictions(pred_df)
+            p.empty()
+
+        total = int(summary["total"])
+        predicted_fraud = int(summary["predicted_fraud"])
+        fraud_rate = float(summary["predicted_fraud_rate"]) if total > 0 else 0.0
+
+        if total == 1:
+            proba = float(pred_df.iloc[0]["fraud_probability"])
+            pred = int(pred_df.iloc[0]["fraud_prediction"])
+            is_fraud = pred == 1
+            pill_class = "danger" if is_fraud else "success"
+            pill_text = "Fraud suspected" if is_fraud else "Not fraud"
+            pill_icon = "⚠️" if is_fraud else "✅"
+
+            st.markdown(
+                f"""
 <div class="fg-status">
   <div class="fg-status-head">
     <p class="fg-status-title">Decision</p>
@@ -518,27 +550,27 @@ with right:
   <div class="fg-divider"></div>
   <p class="fg-muted" style="margin-top:0;">Confidence</p>
 </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.progress(min(max(proba, 0.0), 1.0))
-        st.caption(f"{preview_caption}")
-    else:
-        if predicted_fraud == 0:
-            pill_class = "success"
-            pill_text = "No suspicious rows"
-            pill_icon = "✅"
-        elif fraud_rate >= 0.05:
-            pill_class = "danger"
-            pill_text = "Elevated fraud risk"
-            pill_icon = "⚠️"
+                """,
+                unsafe_allow_html=True,
+            )
+            st.progress(min(max(proba, 0.0), 1.0))
+            st.caption(f"{preview_caption}")
         else:
-            pill_class = "warning"
-            pill_text = "Some risk detected"
-            pill_icon = "🟡"
+            if predicted_fraud == 0:
+                pill_class = "success"
+                pill_text = "No suspicious rows"
+                pill_icon = "✅"
+            elif fraud_rate >= 0.05:
+                pill_class = "danger"
+                pill_text = "Elevated fraud risk"
+                pill_icon = "⚠️"
+            else:
+                pill_class = "warning"
+                pill_text = "Some risk detected"
+                pill_icon = "🟡"
 
-        st.markdown(
-            f"""
+            st.markdown(
+                f"""
 <div class="fg-status">
   <div class="fg-status-head">
     <p class="fg-status-title">Batch summary</p>
@@ -548,35 +580,31 @@ with right:
   <div class="fg-divider"></div>
   <p class="fg-muted" style="margin-top:0;">Fraud-rate indicator</p>
 </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.progress(min(max(fraud_rate, 0.0), 1.0))
-        st.caption(f"{preview_caption}")
-
-    st.markdown("</div>", unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True,
+            )
+            st.progress(min(max(fraud_rate, 0.0), 1.0))
+            st.caption(f"{preview_caption}")
 
 st.markdown("<div style=\"height: 16px\"></div>", unsafe_allow_html=True)
 
 if "pred_df" in locals() and pred_df is not None:
-    st.markdown('<div class="fg-card">', unsafe_allow_html=True)
-    st.markdown('<div class="fg-card-title">🧩 Details</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="fg-card-sub">Review the input preview and the highest-risk rows based on predicted fraud probability.</div>',
-        unsafe_allow_html=True,
-    )
-
-    if show_preview:
-        st.dataframe(df_input.head(50), use_container_width=True)
-
-    if len(pred_df) > 1:
-        st.markdown("<div style=\"height: 10px\"></div>", unsafe_allow_html=True)
-        st.dataframe(
-            pred_df.sort_values("fraud_probability", ascending=False).head(int(top_n)),
-            use_container_width=True,
+    with st.container(border=True):
+        st.markdown('<div class="fg-card-title">🧩 Details</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="fg-card-sub">Review the input preview and the highest-risk rows based on predicted fraud probability.</div>',
+            unsafe_allow_html=True,
         )
-    else:
-        st.markdown("<div style=\"height: 10px\"></div>", unsafe_allow_html=True)
-        st.dataframe(pred_df, use_container_width=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        if show_preview:
+            st.dataframe(df_input.head(50), use_container_width=True)
+
+        if len(pred_df) > 1:
+            st.markdown("<div style=\"height: 10px\"></div>", unsafe_allow_html=True)
+            st.dataframe(
+                pred_df.sort_values("fraud_probability", ascending=False).head(int(top_n)),
+                use_container_width=True,
+            )
+        else:
+            st.markdown("<div style=\"height: 10px\"></div>", unsafe_allow_html=True)
+            st.dataframe(pred_df, use_container_width=True)
